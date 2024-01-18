@@ -79,8 +79,9 @@ class SimpleFOCRegisters(object):
     def add_register(cls, name, id, read_types, write_types):
         if getattr(cls, name, None) is not None:
             raise Exception("Register {} already exists".format(name))
-        for n, r in cls.items():
-            if r.id == id:
+        for n in cls.__dict__:
+            r = cls.__dict__[n]
+            if isinstance(r, Register) and r.id == id:
                 raise Exception("Can't add register {}, the id {} already exists as: {}".format(name, id, n))
         setattr(cls, name, Register(name, id, read_types, write_types))
 
