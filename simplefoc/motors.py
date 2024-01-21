@@ -45,9 +45,11 @@ class Motors(object):
             values = [values]
         if not isinstance(reg, Register):
             reg = parse_register(reg)
-        if self.current_motor != motor_id:
+        if reg==SimpleFOCRegisters.REG_MOTOR_ADDRESS:
+            self.current_motor = values[0]      # optimistic
+        elif self.current_motor != motor_id:
             self.connection.send_frame(Frame(frame_type=FrameType.REGISTER, register=SimpleFOCRegisters.REG_MOTOR_ADDRESS, values=[motor_id]))
-            self.current_motor = motor_id
+            self.current_motor = motor_id       # optimistic
         self.connection.send_frame(Frame(frame_type=FrameType.REGISTER, register=reg, values=values))
 
     def set_register_with_response(self, motor_id:int, reg:int|str|Register, values, timeout=1.0):
@@ -64,7 +66,7 @@ class Motors(object):
         if timeout is not None:
             return self.get_response(motor_id, reg, timeout)
         
-    def get_response(self, motor_id:int, reg:int|str|Register, timeout=None):
+    def get_response(self, motor_id:int, reg:int|str|Register, timeout=1.0):
         return self.observable().pipe(
             ops.filter(lambda p: p.frame_type == FrameType.RESPONSE and p.motor_id == motor_id and p.register == reg),
             ops.filter(lambda p: p.values is not None and len(p.values) > 0),

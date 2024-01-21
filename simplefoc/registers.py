@@ -108,7 +108,7 @@ class SimpleFOCRegisters(object):
     REG_VELOCITY = Register('REG_VELOCITY',0x11,['f'],[])
     REG_SENSOR_ANGLE = Register('REG_SENSOR_ANGLE',0x12,['f'],[])
 
-    REG_TELEMETRY_REG = Register('REG_TELEMETRY_REG',0x1A,[],[])
+    REG_TELEMETRY_REG = Register('REG_TELEMETRY_REG',0x1A,[],['b*'])
     REG_TELEMETRY_CTRL = Register('REG_TELEMETRY_CTRL',0x1B,['b'],['b'])
     REG_TELEMETRY_DOWNSAMPLE = Register('REG_TELEMETRY_DOWNSAMPLE',0x1C,['i'],['i'])
     REG_ITERATIONS_SEC = Register('REG_ITERATIONS_SEC',0x1D,['i'],[])

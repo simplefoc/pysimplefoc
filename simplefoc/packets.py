@@ -96,6 +96,7 @@ class Comms(object):
         self.is_running = True
         self._read_thread = threading.Thread(target=self.__run)
         self._read_thread.start()
+        self.send_frame(Frame(frame_type=FrameType.SYNC))       # send two sync frames to get the remote in sync
         self.send_frame(Frame(frame_type=FrameType.SYNC))
 
     def get_frame(self):
@@ -157,7 +158,7 @@ class ASCIIComms(Comms):
                 framestr += str(frame.register.id)
                 if frame.values is not None and len(frame.values) > 0:
                     framestr += '='
-                    framestr += ','.join([str(v) for v in frame.values])
+                    framestr += self.values_to_string(frame.values, frame.register.write_types)
             case FrameType.SYNC:
                 framestr += 'S'
                 framestr += '1' if self._in_sync else '0'
@@ -168,7 +169,7 @@ class ASCIIComms(Comms):
                 framestr += 'r'
                 framestr += str(frame.register)
                 framestr += '='
-                framestr += ','.join([str(v) for v in frame.values])
+                framestr += self.values_to_string(frame.values, frame.register.read_types)
             case FrameType.TELEMETRY:
                 framestr += 'T'
                 framestr += str(frame.telemetryid)
@@ -182,6 +183,34 @@ class ASCIIComms(Comms):
         framestr += '\n'
         self.connection.write(framestr.encode('ascii'))
         self._echosubject.on_next(framestr[:-1])
+
+    def values_to_string(self, values, types):
+        if (types[0] == 'b*'):
+            return ','.join([self.value_to_string(v, 'b') for v in values])
+        return ','.join([self.value_to_string(values[i] if i<len(values) else 0, t) for i, t in enumerate(types)])
+
+    def value_to_string(self, value, t):
+        if t == 'f':
+            return "{:.6f}".format(value)
+        if t == 'i':
+            v = int(value)
+            if (v >= 0x100000000): # find a more pythonic way to do this
+                v = 0xFFFFFFFF
+            if (v < 0):
+                v += 0x100000000
+                if (v < 0):
+                    v = 0x80000000
+            return str(v)
+        if t == 'b':
+            v = int(value)
+            if (v < 0):
+                v = 256 + v
+                if (v<0):
+                    v = 128
+            if (v > 255):
+                v = 255
+            return str(v)
+        return str(value)
 
     def parse_telemetry(self, packet, header):
         packet.header = header

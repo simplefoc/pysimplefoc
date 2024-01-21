@@ -101,9 +101,6 @@ motors.connect()
 if len(args.registers) >= 0:
     pass # TODO set registers and get header
 
-if args.downsample is not None:
-    telemetry.set_downsample(args.downsample)
-
 pipeline = []
 
 if args.header:
@@ -144,10 +141,13 @@ if args.mqtt is not None:
 if args.influx is not None:
     pass # TODO connect to InfluxDB server
 
-if len(args.registers) >= 0:
-    telemetry.start()
-else:
+if len(args.registers) <= 0:
     telemetry.request_header()
+
+if args.downsample is not None:
+    telemetry.set_downsample(args.downsample)
+# TODO like this the telemetry has to be running already, or downsample must be provided, otherwise it won't start... 
+#    should we set a default value for downsample if its not provided? or should we check first?    
 
 frames.run()               # wait for telemetry to stop or ctrl-c
 

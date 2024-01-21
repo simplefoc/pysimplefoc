@@ -41,7 +41,7 @@ class Telemetry:
         if telemetryid < 0 or telemetryid >= MAX_TELEMTRY_IDS:
             raise Exception("telemetryid must be between 0 and {}".format(MAX_TELEMTRY_IDS-1))
         if telemetryid != self._telemetry_ctrl:
-            self.motors.set_register(0, SimpleFOCRegisters.REG_TELEMETRY_CTRL, telemetryid)
+            self.motors.set_register(self.motors.current_motor, SimpleFOCRegisters.REG_TELEMETRY_CTRL, telemetryid)
             self._telemetry_ctrl = telemetryid
         values = [len(registers)]
         for i in range(0, len(registers)):
