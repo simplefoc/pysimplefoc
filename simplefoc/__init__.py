@@ -76,3 +76,11 @@ class Frame(object):
 
     def __repr__(self): # TODO prettify this output
         return self.__dict__.__str__()
+
+    def __str__(self):
+        val = self.frame_type.value
+        if hasattr(self, 'register'):
+          val += str(self.register.id)
+        if hasattr(self, 'values'):
+          val += str(self.values)
+        return val
