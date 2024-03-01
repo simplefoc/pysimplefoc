@@ -39,7 +39,7 @@ class Motor:
     def set_limits(self, max_voltage:float=None, max_current:float=None, max_velocity:float=None, max_angle:float=None, min_angle:float=None):
         if (max_voltage!=None): self.motors.set_register(self.motor_id, SimpleFOCRegisters.REG_VOLTAGE_LIMIT, float(max_voltage))
         if (max_current!=None): self.motors.set_register(self.motor_id, SimpleFOCRegisters.REG_CURRENT_LIMIT, float(max_current))
-        if (max_velocity!=None): self.motors.set_register(self.motor_id, SimpleFOCRegisters.REG_VEL_LIMIT, float(max_velocity))
+        if (max_velocity!=None): self.motors.set_register(self.motor_id, SimpleFOCRegisters.REG_VELOCITY_LIMIT, float(max_velocity))
         # todo add max and min angle limits to SimpleFOC
         #self.motors.set_register(self.motor_id, SimpleFOCRegisters.REG_ANGLE_LIMIT_H, float(max_angle))
         #self.motors.set_register(self.motor_id, SimpleFOCRegisters.REG_ANGLE_LIMIT_L, float(min_angle))
@@ -49,17 +49,17 @@ class Motor:
         if p != None: self.motors.set_register(self.motor_id, SimpleFOCRegisters.REG_VEL_PID_P, float(p))
         if i != None: self.motors.set_register(self.motor_id, SimpleFOCRegisters.REG_VEL_PID_I, float(i))
         if d != None: self.motors.set_register(self.motor_id, SimpleFOCRegisters.REG_VEL_PID_D, float(d))
-        if limit != None: self.motors.set_register(self.motor_id, SimpleFOCRegisters.REG_VOLTAGE_LIMIT, float(limit)) # todo this is not exactly correct
+        if limit != None: self.motors.set_register(self.motor_id, SimpleFOCRegisters.REG_VEL_PID_LIM, float(limit)) # todo this is not exactly correct
         if ramp != None: self.motors.set_register(self.motor_id, SimpleFOCRegisters.REG_VEL_PID_RAMP, float(ramp))
         if tf != None: self.motors.set_register(self.motor_id, SimpleFOCRegisters.REG_VEL_LPF_T, float(tf))
 
     def set_angle_pid(self, p:float = None, i:float = None, d:float = None, limit:float = None, ramp:float = None, tf:float = None):
         if p != None: self.motors.set_register(self.motor_id, SimpleFOCRegisters.REG_ANG_PID_P, float(p))
-        #if i != None: self.motors.set_register(self.motor_id, SimpleFOCRegisters.REG_ANG_PID_I, float(i)) # todo add missing registers
-        #if d != None: self.motors.set_register(self.motor_id, SimpleFOCRegisters.REG_ANG_PID_D, float(d))
-        if limit != None: self.motors.set_register(self.motor_id, SimpleFOCRegisters.REG_VEL_LIMIT, float(limit))
-        #if ramp != None: self.motors.set_register(self.motor_id, SimpleFOCRegisters.REG_ANG_PID_RAMP, float(ramp))
-        #if tf != None: self.motors.set_register(self.motor_id, SimpleFOCRegisters.REG_ANG_LPF_T, float(tf))
+        if i != None: self.motors.set_register(self.motor_id, SimpleFOCRegisters.REG_ANG_PID_I, float(i)) # todo add missing registers
+        if d != None: self.motors.set_register(self.motor_id, SimpleFOCRegisters.REG_ANG_PID_D, float(d))
+        if limit != None: self.motors.set_register(self.motor_id, SimpleFOCRegisters.REG_ANG_PID_LIM, float(limit))
+        if ramp != None: self.motors.set_register(self.motor_id, SimpleFOCRegisters.REG_ANG_PID_RAMP, float(ramp))
+        if tf != None: self.motors.set_register(self.motor_id, SimpleFOCRegisters.REG_ANG_LPF_T, float(tf))
 
     def set_motor_parameters(self, resistance:float=None, kv:float=None, inductance:float=None, pole_pairs:int=None):
         if kv != None: self.motors.set_register(self.motor_id, SimpleFOCRegisters.REG_KV, float(kv))
