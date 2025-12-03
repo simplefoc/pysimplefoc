@@ -12,6 +12,9 @@ setup(
     author='Richard Unger',
     author_email="runger@simplefoc.com",
     install_requires=['serial', 'rx'],
+    extras_require={
+        'can': ['python-can>=4.0.0'],
+    },
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",

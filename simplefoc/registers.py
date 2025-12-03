@@ -169,7 +169,7 @@ class SimpleFOCRegisters(object):
     REG_POLE_PAIRS = Register('REG_POLE_PAIRS',0x63,['b'],['b'])
     REG_PHASE_RESISTANCE = Register('REG_PHASE_RESISTANCE',0x64,['f'],['f'])
     REG_KV = Register('REG_KV',0x65,['f'],['f'])
-    REG_INDUCTANCE = Register('REG_INDUCTANCE',0x66,['f'],['f'])
+    REG_PHASE_INDUCTANCE = Register('REG_INDUCTANCE',0x66,['f'],['f'])
     REG_CURA_GAIN = Register('REG_CURA_GAIN',0x67,['f'],['f'])
     REG_CURB_GAIN = Register('REG_CURB_GAIN',0x68,['f'],['f'])
     REG_CURC_GAIN = Register('REG_CURC_GAIN',0x69,['f'],['f'])

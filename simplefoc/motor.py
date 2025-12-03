@@ -1,6 +1,7 @@
 
 from .registers import SimpleFOCRegisters
 from rx import operators as ops
+from simplefoc import TorqueControlType, MotionControlType
 
 class Motor:
     """ SimpleFOC Motor class
@@ -75,3 +76,40 @@ class Motor:
 
     def get_angle(self, timeout:float=1.0):
         return self.motors.get_register(self.motor_id, SimpleFOCRegisters.REG_ANGLE, timeout)
+
+    def get_velocity(self, timeout:float=1.0):
+        return self.motors.get_register(self.motor_id, SimpleFOCRegisters.REG_VELOCITY, timeout)
+    
+    def get_torque(self, timeout:float=1.0):
+        return self.motors.get_register(self.motor_id, SimpleFOCRegisters.REG_CURRENT_Q, timeout)
+    
+    def get_torque_mode(self, timeout:float=1.0):
+        return TorqueControlType(self.motors.get_register(self.motor_id, SimpleFOCRegisters.REG_TORQUE_MODE, timeout))
+    
+    def get_motion_control_type(self, timeout:float=1.0):
+        return MotionControlType(self.motors.get_register(self.motor_id, SimpleFOCRegisters.REG_CONTROL_MODE, timeout))
+    
+    def get_angle_pid(self, timeout:float=1.0):
+        p = self.motors.get_register(self.motor_id, SimpleFOCRegisters.REG_ANG_PID_P, timeout)
+        i = self.motors.get_register(self.motor_id, SimpleFOCRegisters.REG_ANG_PID_I, timeout)
+        d = self.motors.get_register(self.motor_id, SimpleFOCRegisters.REG_ANG_PID_D, timeout)
+        return (p,i,d)
+    
+    def get_velocity_pid(self, timeout:float=1.0):
+        p = self.motors.get_register(self.motor_id, SimpleFOCRegisters.REG_VEL_PID_P, timeout)
+        i = self.motors.get_register(self.motor_id, SimpleFOCRegisters.REG_VEL_PID_I, timeout)
+        d = self.motors.get_register(self.motor_id, SimpleFOCRegisters.REG_VEL_PID_D, timeout)
+        return (p,i,d)
+    
+    
+    def get_motor_parameters(self, timeout:float=1.0):
+        resistance = self.motors.get_register(self.motor_id, SimpleFOCRegisters.REG_PHASE_RESISTANCE, timeout)
+        kv = self.motors.get_register(self.motor_id, SimpleFOCRegisters.REG_KV, timeout)
+        inductance = self.motors.get_register(self.motor_id, SimpleFOCRegisters.REG_PHASE_INDUCTANCE, timeout)
+        pole_pairs = self.motors.get_register(self.motor_id, SimpleFOCRegisters.REG_POLE_PAIRS, timeout)
+        return {
+            "pole_pairs": pole_pairs if pole_pairs != -1 else None,
+            "resistance": resistance if resistance != -12345.0 else None,
+            "kv": kv if kv != -12345.0 else None,
+            "inductance": inductance if inductance != -12345.0 else None
+        }

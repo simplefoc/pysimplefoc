@@ -20,6 +20,8 @@ Note: Python API v0.0.4 is designed for use with SimpleFOC v2.3.3 or later
 Features:
 
 - Serial connections to SimpleFOC drivers
+- **CAN bus connections via CANCommander protocol**
+  > Important: CAN support requires python-can package and a USB dongle that supports it (ex. SocketCAN). 
 - Control motors via Commander protocol
 - Telemetry based on SimpleFOC monitoring abstraction
 - Control motors via packet based protocol based on SimpleFOC Drivers Registers abstraction
@@ -34,11 +36,12 @@ Features:
 1. Install python dependencies:
 
 ```
-pip install pyserial rx
+pip install pyserial rx python-can
 ```
 or, on Debian:
 ```
 sudo apt install python3-serial python3-rx
+pip install python-can
 ```
 
 2. Install PySimpleFOC:
@@ -51,7 +54,14 @@ pip install simplefoc
 
 3. Set up your serial connection to the driver.
 
-4. Decide on protocol to use: Commander or Packets, and if Packets, Text or Binary
+   **OR** set up your CAN bus connection (requires CAN hardware interface):
+   ```bash
+   # Linux SocketCAN setup
+   sudo ip link set can0 type can bitrate 1000000
+   sudo ip link set can0 up
+   ```
+
+4. Decide on protocol to use: Commander, Packets (Text/Binary), or **CAN**
 
 5. Write and run some python code (see our [examples](./examples/))
 
@@ -139,6 +149,8 @@ options:
 
 ## Library usage
 
+### Serial Communication (Commander protocol)
+
 Using the python API is quite simple, the following examples show use of the 'commander' protocol:
 
 ```python
@@ -150,6 +162,36 @@ commander.connect()
 motor = commander.full_control('M')
 motor.set_target(10)
 ```
+
+### CAN Bus Communication (CANCommander protocol)
+
+For CAN bus communication using the CANCommander protocol:
+
+```python
+import simplefoc.can as can
+from simplefoc import MotionControlType, TorqueControlType
+
+# Connect to CAN bus
+motors = can.can_bus(
+    interface='can0',           # CAN interface name
+    target_address=0x05        # SimpleFOC driver's address
+)
+motors.connect()
+
+# Get motor and control it
+motor = motors.motor(0)
+motor.set_mode(MotionControlType.torque, TorqueControlType.voltage)
+motor.enable()
+motor.set_target(2.0)
+
+# Read motor state
+velocity = motor.get_velocity()
+angle = motor.get_angle()
+```
+
+See [examples/can/README.md](examples/can/README.md) for detailed CAN setup and usage.
+
+### Common Motor Control
 
 Various easy to use methods are pre-defined to interact with the motor:
 

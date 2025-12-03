@@ -9,44 +9,21 @@ from enum import Enum
 from .registers import parse_register, Register, SimpleFOCRegisters
 import serial as ser
 import time, struct, threading
-from .motors import Motors
 from rx.subject import Subject
 from rx import operators as ops
 from simplefoc import Frame, FrameType
 
-
+try:
+    import can as python_can
+except ImportError:
+    print("WARNING: python-can not installed. Install with: pip install python-can if useing CAN communication.")
+    python_can = None
 
 class ProtocolType(Enum):
     binary = 0
     ascii = 1
 
 MARKER = 0xA5
-
-
-
-def serial(port, baud, protocol=ProtocolType.binary):
-    """ Create a serial connection to a SimpleFOC driver, and return a Motors instance to interact with it. 
-        The connection is packet-based, and uses either ASCII or binary protocol.
-        
-        Note that the serial connection is not opened until you call motors.connect().
-    
-        @param port: the serial port to connect to
-        @param baud: the baud rate to use
-        @param protocol: the protocol to use (binary or ascii)
-    """
-    ser_conn = ser.Serial()
-    ser_conn.port = port
-    ser_conn.baudrate = baud
-    comms = None
-    if protocol == ProtocolType.binary:
-        comms = BinaryComms(ser_conn)
-    elif protocol == ProtocolType.ascii:
-        comms = ASCIIComms(ser_conn)
-    else:
-        raise ValueError("Unknown protocol type")
-    return Motors(comms)
-
-
 
 
 def parse_value(valuestr):
@@ -475,3 +452,96 @@ class BinaryComms(Comms):
                 return int.from_bytes(buffer[pos:pos+1]), 1
             case _:
                 raise Exception("Unsupported value type")
+
+
+class CANComms(Comms):
+    """Minimal CAN communication for SimpleFOC CANCommander protocol"""
+    
+    def __init__(self, bus, target_address):
+        self.bus = bus
+        self.target_address = target_address
+        self._subject = Subject()
+        self._observable = self._subject.pipe(ops.share())
+        self._echosubject = Subject()
+        self._echo = self._echosubject.pipe(ops.share())
+        self._in_sync = False
+        self.is_running = False
+    
+    def connect(self):
+        self.is_running = True
+        self._read_thread = threading.Thread(target=self._run)
+        self._read_thread.daemon = True
+        self._read_thread.start()
+    
+    def disconnect(self):
+        self.is_running = False
+        if hasattr(self, '_read_thread'):
+            self._read_thread.join(timeout=1.0)
+        self.bus.shutdown()
+        self._subject.on_completed()
+    
+    def send_frame(self, frame):
+        motor_id = getattr(frame, 'motor_id', 0)
+        
+        if frame.frame_type == FrameType.REGISTER:
+            has_data = hasattr(frame, 'values') and frame.values
+            pkt_type = 2 if has_data else 1  # WRITE:READ
+            can_id = (self.target_address << 20) | (pkt_type << 16) | (frame.register.id << 8) | motor_id
+            data = self._pack(frame.register, frame.values) if has_data else []
+            self.bus.send(python_can.Message(arbitration_id=can_id, data=data, is_extended_id=True))
+            self._echosubject.on_next(frame)
+    
+    def get_frame(self):
+        return None  # Handled by thread
+    
+    def observable(self):
+        return self._observable
+    
+    def echo(self):
+        return self._echo
+    
+    def _run(self):
+        while self.is_running:
+            msg = self.bus.recv(timeout=0.01)
+            if msg is None:
+                continue
+            if msg and msg.is_extended_id:
+                addr = (msg.arbitration_id >> 20) & 0xFF
+                if addr == self.target_address:
+                    pkt_type = (msg.arbitration_id >> 16) & 0xF
+                    if pkt_type == 3:  # RESPONSE
+                        reg_id = (msg.arbitration_id >> 8) & 0xFF
+                        motor_id = msg.arbitration_id & 0xFF
+                        reg = SimpleFOCRegisters.by_id(reg_id)
+                        if reg:
+                            values = self._unpack(reg, msg.data)
+                            self._subject.on_next(Frame(frame_type=FrameType.RESPONSE, 
+                                                       register=reg, values=values, motor_id=motor_id))
+    
+    def _pack(self, reg, values):
+        if not values:
+            return []
+        data = bytearray()
+        for i, t in enumerate(reg.write_types):
+            if i < len(values):
+                if t == 'f':
+                    data.extend(struct.pack('<f', float(values[i])))
+                elif t == 'i':
+                    data.extend(struct.pack('<I', int(values[i])))
+                elif t == 'b':
+                    data.append(int(values[i]) & 0xFF)
+        return bytes(data)
+    
+    def _unpack(self, reg, data):
+        values, pos = [], 0
+        for t in reg.read_types:
+            if t == 'f' and pos + 4 <= len(data):
+                values.append(struct.unpack('<f', data[pos:pos+4])[0])
+                pos += 4
+            elif t == 'i' and pos + 4 <= len(data):
+                values.append(struct.unpack('<I', data[pos:pos+4])[0])
+                pos += 4
+            elif t == 'b' and pos + 1 <= len(data):
+                values.append(data[pos])
+                pos += 1
+        return values
